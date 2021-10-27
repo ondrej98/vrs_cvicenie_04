@@ -49,6 +49,14 @@ int main(void) {
 	//type your code for EXTI configuration (priority, enable EXTI, setup EXTI for input pin, trigger edge) here:
 	NVIC_SetPriority(EXTI4_IRQn, 2);
 	NVIC_EnableIRQ(EXTI4_IRQn);
+	/*set EXTI source PA3*/
+	SYSCFG->EXTICR[1] &= ~(0xFU << 0U);
+	SYSCFG->EXTICR[1] |= (0x1U << 0U);
+	//Enable interrupt from EXTI line 3
+	EXTI->IMR |= EXTI_IMR_MR4;
+	//Set EXTI trigger to falling edge
+	EXTI->RTSR &= ~(EXTI_IMR_MR4);
+	EXTI->FTSR |= EXTI_IMR_MR4;
 
 	/* Configure GPIOB-4 pin as an input pin - button */
 	//type your code for GPIO configuration here:
@@ -68,15 +76,16 @@ int main(void) {
 	while (1) {
 		// Modify the code below so it sets/resets used output pin connected to the LED
 		if (switch_state) {
-			GPIOB->BSRR |= GPIO_BSRR_BS_3;
+			GPIOA->BSRR |= (GPIO_BSRR_BS_4);
 			for (uint16_t i = 0; i < 0xFF00; i++) {
 			}
-			GPIOB->BRR |= GPIO_BRR_BR_3;
+			GPIOA->BRR |= (GPIO_BRR_BR_4);
 			for (uint16_t i = 0; i < 0xFF00; i++) {
 			}
 		} else {
-			GPIOB->BRR |= GPIO_BRR_BR_3;
+			GPIOA->BRR |= (GPIO_BRR_BR_4);
 		}
+		LL_mDelay(1);
 	}
 
 }
@@ -117,14 +126,14 @@ uint8_t checkButtonState(GPIO_TypeDef *PORT, uint8_t PIN, uint8_t edge,
 	//type your code for "checkButtonState" implementation here:
 	uint8_t button_state = 0, timeout = 0;
 	while (timeout < samples_window) {
-		if (!(PORT->IDR & (TRIGGER_RISE << PIN))) {
+		if (!(PORT->IDR & (1 << PIN))) {
 			button_state += 1;
 		} else {
 			//button_state = 0;
 		}
 		timeout += 1;
 	}
-	if(button_state >= samples_required)
+	if (button_state >= samples_required)
 		return 1;
 	else
 		return 0;
